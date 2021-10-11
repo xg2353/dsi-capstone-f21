@@ -1,1 +1,2 @@
-# dsi-capstone-f21
+# JPMorgan - Causality-informed fairness treatments of unfair AI systems
+
