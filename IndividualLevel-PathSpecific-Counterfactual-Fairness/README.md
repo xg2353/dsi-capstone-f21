@@ -1,8 +1,10 @@
 # IndividualLevel-PathSpecific-Counterfactual-Fairness
 
-This repository is an official implementation of the following paper:
+This folder is an official implementation (by ychika) of the following paper:
 
 Yoichi Chikahara, Shinsaku Sakaue, Akinori Fujino, Hisashi Kashima; 'Learning Individually Fair Classifier with Path-Specific Causal-Effect Constraint', International Conference on Artificial Intelligence and Statistics (AISTATS2021).
+
+Some changes are made for the purpose of this project.
 
 ## Requirements
 
