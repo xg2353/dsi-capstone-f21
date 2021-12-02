@@ -191,6 +191,18 @@ def main(lambda_fair: float, T: int, mode: str, lr: float, mom: float, opt_m: st
         elif nn_type == 2:
             H1 = 1; H2 = 1 # logistic case
         resplot=False
+    elif mode == "law":
+        trainset, testset = LoadGermanData("../../data/german_preprocessed_tr.csv", "../../data/german_preprocessed_te.csv", remove_sensitive)
+        Prop = German(trainset.data, remove_sensitive)
+        Prop_test = German(testset.data, remove_sensitive)
+        D_in = Prop.d ## input data dimension
+        if nn_type == 1:
+            H1 = 100; H2 = 50
+        elif nn_type == 2:
+            H1 = 1; H2 = 1 # logistic case
+        else:
+            H1 = 100; H2 = 50
+        resplot=False
 
     theta_t = Optim(H1, H2, batchsize, T, lambda_fair, Prop, trainset, testset, resplot, np.random.randint(0, 2 ** 32 -1), lr, mom, remove_sensitive, opt_m, fio, synth_num, unconstr, oracle, uncertain)
 
@@ -214,7 +226,9 @@ def main(lambda_fair: float, T: int, mode: str, lr: float, mom: float, opt_m: st
     if mode == "synth" or mode == "synthmiles" or mode == "synthu":
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=batchsize,
                                                   shuffle=False, num_workers=0)
-        total = 0; correct = 0
+        total = 0
+        correct = 0
+        predicted_list = []
         for i, data in enumerate(trainloader, 0):
             inputs, labels = data
 
@@ -227,9 +241,15 @@ def main(lambda_fair: float, T: int, mode: str, lr: float, mom: float, opt_m: st
                 labels = labels.float()
                 predicted = torch.distributions.binomial.Binomial(1, probs=outputs.data[:, 0]).sample()
 
+            predicted_list.append(predicted.tolist())
 
             total += labels.size(0) ## # of data
             correct += (predicted == labels).sum().item()
+
+        print("# training samples: ", total)
+        print("# correct training predictions: ", correct)
+        print('training predictions: ', predicted_list)
+
         print("Training accuracy = " + str(100 * float(correct/total)))
         if remove_sensitive is False:
             piu, condmean_array, mean_, std_ = Prop.EvaluatePIUandConditionalMean(model)
@@ -248,8 +268,10 @@ def main(lambda_fair: float, T: int, mode: str, lr: float, mom: float, opt_m: st
             pse = Prop_test.Pse_indiv(model)
 
     ## test accuracies
-    total = 0; correct = 0
-    labels_np = np.array([]); predicted_np = np.array([])
+    total = 0
+    correct = 0
+    labels_np = np.array([])
+    predicted_np = np.array([])
     for i, data in enumerate(testloader, 0):
         inputs, labels = data
 
@@ -268,6 +290,9 @@ def main(lambda_fair: float, T: int, mode: str, lr: float, mom: float, opt_m: st
         total += labels.size(0) ## # of data
         correct += (predicted == labels).sum().item()
 
+    print("# test samples: ", total)
+    print("# correct testing predictions: ", correct)
+    print("Test predictions: ", predicted_np)
     print("Test Accuracy = " + str(100 * float(correct/total)))
     if remove_sensitive is False:
         print("Note: lambda_fair = " + str(lambda_fair))

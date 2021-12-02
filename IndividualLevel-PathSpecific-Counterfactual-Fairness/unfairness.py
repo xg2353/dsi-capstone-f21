@@ -572,8 +572,6 @@ class Synth_Miles:
         return np.mean(np.abs(Y1 - Y0)), condmean_array, mean_, std_
 
 
-
-
 class Synth_Uncertain:
     def __init__(self, X, remove_sensitive):
         if remove_sensitive is False:
@@ -765,5 +763,125 @@ class Synth_Uncertain:
         std_ = np.sqrt( np.sum( np.array([ num_of_members[j] * np.square( condmean_array[j] - mean_) for j in range(num_of_fc)]) ) / ((self.n - 1) * self.n)  )
 
         return np.mean(np.abs(Y1 - Y0)), condmean_array, mean_, std_
-      
 
+
+class Law:
+    def __init__(self, X, remove_sensitive):
+        if remove_sensitive is False:
+            self.X = X[:, 1:]  ## remove label Y
+            self.n = np.shape(self.X)[0]
+            self.d = np.shape(self.X)[1]
+
+            self.clf_srx, self.clf_sx, self.clf_x = self.PropensityFuncs()
+            X_1 = self.X.copy();
+            X_0 = self.X.copy()  # prepare different object!
+            X_1[:, 0] = np.ones(self.n)
+            X_0[:, 0] = np.zeros(self.n)
+            self.X_1 = X_1
+            self.X_0 = X_0
+            w_prop1 = np.zeros(self.n)
+            w_prop0 = np.zeros(self.n)
+            for i in range(self.n):
+                w_prop1[i], w_prop0[i] = self.Propensity(self.X[i, 1:])  # remove sensitive feature
+                if flag_clip:
+                    w_prop1[i] = np.min((w_prop1[i], clip))
+                    w_prop0[i] = np.min((w_prop0[i], clip))
+            self.w_prop1 = w_prop1
+            self.w_prop0 = w_prop0
+
+        else:
+            self.X = X[:, 1:]  ## only R and X; remove Y (already removed A, S)
+            self.n = np.shape(self.X)[0]
+            self.d = np.shape(self.X)[1]
+
+    def PropensityFuncs(self):
+        ## fit the P(A|S, R, X) model
+        clf_srx = LogisticRegression(solver='lbfgs', max_iter=1000)
+        clf_srx.fit(self.X[:, [1, 2, 3, 4]], self.X[:, 0])
+        ## fit the P(A|S, X) model
+        clf_sx = LogisticRegression(solver='lbfgs', max_iter=1000)
+        clf_sx.fit(self.X[:, [1, 2, 4]], self.X[:, 0])
+        ## fit the P(A|X) model
+        clf_x = LogisticRegression(solver='lbfgs', max_iter=1000)
+        clf_x.fit(self.X[:, [6, 7, 8]], self.X[:, 0])
+        return clf_srx, clf_sx, clf_x
+
+    def Propensity(self, x):
+        w_prop1 = (1.0 / self.clf_x.predict_proba([x[[5, 6, 7]]])[0][1]) * (
+                    self.clf_sx.predict_proba([x[[0, 1, 2, 5, 6, 7]]])[0][1] /
+                    self.clf_sx.predict_proba([x[[0, 1, 2, 5, 6, 7]]])[0][0]) * (
+                              self.clf_srx.predict_proba([x[[0, 1, 2, 3, 4, 5, 6, 7]]])[0][0] /
+                              self.clf_srx.predict_proba([x[[0, 1, 2, 3, 4, 5, 6, 7]]])[0][1])
+        w_prop0 = 1.0 / self.clf_x.predict_proba([x[[5, 6, 7]]])[0][0]
+        return w_prop1, w_prop0
+
+    def Pse_ub(self, model, indices=None, fio=False):
+        p1 = 0.0;
+        p0 = 0.0
+        if indices is None:
+            n = self.n  ## = total number of data samples
+            n1 = np.where(self.X[:, 0] == 1)[0].size
+            n0 = np.where(self.X[:, 0] == 0)[0].size
+            for i in range(n):
+                i_is_male = self.X[i, 0]  # = 1 if a_i = 1
+                i_is_female = (1 - self.X[i, 0])  # = 1 if a_i = 0
+                p1 += i_is_male * self.w_prop1[i] * \
+                      torch.exp(model(Variable(torch.Tensor(self.X_1[i, :].reshape(-1, np.shape(self.X_1)[1])))))[0][1]
+                p0 += i_is_female * self.w_prop0[i] * \
+                      torch.exp(model(Variable(torch.Tensor(self.X_0[i, :].reshape(-1, np.shape(self.X_1)[1])))))[0][1]
+
+                # use data indices for stochastic gradient descent method
+        else:
+            n = np.shape(indices)[0]  ## = minibatch size
+            n1 = np.where(self.X[indices, 0] == 1)[0].size
+            n0 = np.where(self.X[indices, 0] == 0)[0].size
+            for i in range(n):
+                i_is_male = self.X[indices[i], 0]
+                i_is_female = (1 - self.X[indices[i], 0])
+                p1 += i_is_male * self.w_prop1[indices[i]] * torch.exp(
+                    model(Variable(torch.Tensor(self.X_1[indices[i], :].reshape(-1, np.shape(self.X_1)[1])))))[0][1]
+                p0 += i_is_female * self.w_prop0[indices[i]] * torch.exp(
+                    model(Variable(torch.Tensor(self.X_0[indices[i], :].reshape(-1, np.shape(self.X_1)[1])))))[0][1]
+
+        p1 = p1 / n
+        p0 = p0 / n
+
+        if fio is False:
+            constr = 2 * (p1 * (1.0 - p0) + (1.0 - p1) * p0)
+        else:
+            if p1 > p0:
+                constr = p1 - p0
+            else:
+                constr = p0 - p1
+
+        return constr
+
+    def Pse_indiv(self, model):
+        n = self.n  ## = total number of data samples
+        pse = np.zeros(n)
+        prob1 = np.zeros(n)
+        prob0 = np.zeros(n)
+
+        for i in range(n):
+            i_is_male = self.X[i, 0]
+            i_is_female = (1 - self.X[i, 0])
+            prob1[i] = i_is_male * self.w_prop1[i] * \
+                       torch.exp(model(Variable(torch.Tensor(self.X_1[i, :].reshape(-1, np.shape(self.X_1)[1])))))[0][
+                           1].detach().numpy()
+            prob0[i] = i_is_female * self.w_prop0[i] * \
+                       torch.exp(model(Variable(torch.Tensor(self.X_0[i, :].reshape(-1, np.shape(self.X_1)[1])))))[0][
+                           1].detach().numpy()
+
+            pse[i] = prob1[i] - prob0[i]
+
+        prob1_mean = np.min((np.mean(prob1), 1.0))
+        prob0_mean = np.min((np.mean(prob0), 1.0))
+
+        print("mean of prob1 and prob0")
+        print(str(np.mean(prob1)) + " -> " + str(prob1_mean))
+        print(str(np.mean(prob0)) + " -> " + str(prob0_mean))
+
+        print("mean: " + str(prob1_mean - prob0_mean))
+        print("ub: " + str(2 * ((1 - prob0_mean) * prob1_mean + prob0_mean * (1 - prob1_mean))))
+
+        return np.array(pse)

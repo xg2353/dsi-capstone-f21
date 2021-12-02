@@ -36,6 +36,17 @@ class SynthDataset(Dataset):
         out_label = self.data[idx, 4]
         return out_data, out_label
 
+class LawDataset(Dataset):
+    """Law School dataset."""
+    def __init__(self, data):
+        self.data = data
+    def __len__(self):
+        return len(self.data)
+    def __getitem__(self, idx):
+        out_data = self.data[idx, 1:]
+        out_label = self.data[idx, 0]
+        return out_data, out_label
+
 class SynthDataset_r(Dataset):
     """Synthetic dataset."""
     def __init__(self, data):

@@ -163,16 +163,21 @@ def Optim(H1, H2, batchsize, T, lambda_fair, Prop, trainset, testset, resplot, s
         if H1 == 0:
             trainloader = torch.utils.data.DataLoader(trainset, batch_size=batchsize,
                                                       shuffle=False, num_workers=0)
-            total = 0; correct = 0        
+            total = 0; correct = 0
+            predicted_list = []
             for i, data in enumerate(trainloader, 0):
                 inputs, labels = data
                 labels = labels.float()
                 
                 outputs = model(inputs) ## outputs.data has (# of data, # of classes)
                 predicted = torch.distributions.binomial.Binomial(1, probs=outputs.data[:, 0]).sample()
+
+                predicted_list.append(predicted)
                 
                 total += labels.size(0) ## # of data
                 correct += (predicted == labels).sum().item()
+
+            print('predictions: ', predicted_list)
             print("Training accuracy = " + str(100 * float(correct/total)))
         
     if H1 == 1:
