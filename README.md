@@ -1,2 +1,2 @@
-# JPMorgan - Causality-informed fairness treatments of unfair AI systems
+# JPMorgan - Causality-Informed Fairness Treatments of Unfair AI Systems
 
