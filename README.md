@@ -74,7 +74,7 @@ dsi-capstone-f21:.
         fit_models.R
         main.R
         compute_pse.R
-|       constrained_mle.R
+        constrained_mle.R
 ```
 
 ## Datasets
