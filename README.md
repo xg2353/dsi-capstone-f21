@@ -57,7 +57,21 @@ dsi-capstone-f21:.
 |       intervantion.csv
 |       law_data.csv
 |       no_intervention.csv
-|
++---documents
+|   +---Poster Session
+|   |       Final Results and Report.xlsx
+|   |       Poster Presentation 12_14_21.pptx
+|   |
+|   +---Report 1
+|   |       Capstone -- Proposed Evaluation Metric -- Counterfactual Fairness.xlsx
+|   |       Progress Report 1 - Causality-Informed Fairness - 11_2_21.docx
+|   |       Progress Report 1 - Causality-Informed Fairness - 11_2_21.pdf
+|   |
+|   \---Report 2
+|           annotated-JPM3-2ndReport.pdf
+|           Counterfactual Fairness Report 2.xlsx
+|           Full_Unaware Model Result.xlsx
+|           JPM3-2ndReport.docx
 +---notebooks
 |       Baseline_Models.ipynb
 |       Evaluate Counterfactual Fairness for Path-Specific Fairness Prediction Output.ipynb
