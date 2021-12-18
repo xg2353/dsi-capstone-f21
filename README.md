@@ -60,8 +60,6 @@ dsi-capstone-f21:.
 |
 +---notebooks
 |       Baseline_Models.ipynb
-|       compute_pse.R
-|       constrained_mle.R
 |       Evaluate Counterfactual Fairness for Path-Specific Fairness Prediction Output.ipynb
 |       Evaluation metrics_ demographic parity equality of opportunity.ipynb
 |       Evaluation_metrics_demographic_parity_equality_of_opportunity.ipynb
@@ -75,6 +73,8 @@ dsi-capstone-f21:.
         evaluate_performance.R
         fit_models.R
         main.R
+        compute_pse.R
+|       constrained_mle.R
 ```
 
 ## Datasets
