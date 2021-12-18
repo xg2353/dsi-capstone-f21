@@ -42,5 +42,40 @@ publisher = { AAAI Press }
 }
 ```
 
+## Repository Organisation
+
+```
+dsi-capstone-f21:.
+|   .gitignore
+|   .Rhistory
+|   README.md
+|
++---datasets
+|       Counter_Test_df.csv
+|       Full_Test_df.csv
+|       Full_Training_df.csv
+|       intervantion.csv
+|       law_data.csv
+|       no_intervention.csv
+|
++---notebooks
+|       Baseline_Models.ipynb
+|       compute_pse.R
+|       constrained_mle.R
+|       Evaluate Counterfactual Fairness for Path-Specific Fairness Prediction Output.ipynb
+|       Evaluation metrics_ demographic parity equality of opportunity.ipynb
+|       Evaluation_metrics_demographic_parity_equality_of_opportunity.ipynb
+|       Metrics Sync.ipynb
+|       Models.ipynb
+|       probabalistic_graphical_model_example.ipynb
+|       Synthetic Data_Model Result for Report2.ipynb
+|       Toy Dataset and Fair Classifier.ipynb
+|
+\---R_codes
+        evaluate_performance.R
+        fit_models.R
+        main.R
+```
+
 ## Datasets
 
